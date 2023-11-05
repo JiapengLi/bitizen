@@ -38,12 +38,13 @@ CMP Keygen 测试步骤：
 第一步，在机器 B 上打开两个终端，分别执行：
 ```
 python ws_server.py 8000    # 机器 B 终端 1 中执行
-python test_client.py cmp_keygen ws://127.0.0.1:8000 b         # 机器 B 终端 2 中执行
+python3 test_client.py cmp_keygen ws://127.0.0.1:8000 b         # 机器 B 终端 2 中执行
 ```
 
 第二步，在机器 A 上执行（这个命令需要当机器 B 上执行命令后，马上执行。机器 A 上命令和机器 B 上命令的执行时间不能相差 20 秒，否则会失败。如果失败则杀死前面测试进程，重新开始）：
 ```
-python test_client.py cmp_keygen ws://127.0.0.1:8000 a         # 机器 A 中执行
+python3 test_client.py cmp_keygen ws://127.0.0.1:8000 a         # 机器 A 中执行
+python3 test_client.py cmp_keygen ws://192.168.192.4:8000 a         # 机器 A 中执行
 ```
 
 结束后，在机器 A（不是机器 B，因为机器 B 中代码先执行，首轮有额外的等待时间）上查看执行时间，如：
@@ -60,13 +61,14 @@ CMP Reshare 测试步骤：
 第一步，在机器 B 上打开三个终端，分别执行：
 ```
 python ws_server.py 8000    # 机器 B 终端 1 中执行
-python test_client.py cmp_reshare ws://127.0.0.1:8000 cmp_keyshare_b.txt         # 机器 B 终端 2 中执行
-python test_client.py cmp_reshare ws://127.0.0.1:8000 cmp_keyshare_a.txt         # 机器 B 终端 3 中执行
+python3 test_client.py cmp_reshare ws://127.0.0.1:8000 cmp_keyshare_b.txt         # 机器 B 终端 2 中执行
+python3 test_client.py cmp_reshare ws://127.0.0.1:8000 cmp_keyshare_a.txt         # 机器 B 终端 3 中执行
 ```
 
 第二步，在机器 A 上执行（这个命令需要当机器 B 上执行命令后，马上执行。机器 A 上命令和机器 B 上命令的执行时间不能相差 20 秒，否则会失败。如果失败则杀死前面测试进程，重新开始）：
 ```
-python test_client.py cmp_reshare ws://127.0.0.1:8000                   # 机器 A 中执行
+python3 test_client.py cmp_reshare ws://127.0.0.1:8000                   # 机器 A 中执行
+python3 test_client.py cmp_reshare ws://192.168.192.4:8000
 ```
 
 结束后，在机器 A（不是机器 B，因为机器 B 中代码先执行，首轮有额外的等待时间）上查看执行时间，如：

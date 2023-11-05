@@ -25,7 +25,7 @@ prefix = {'win32': ''}.get(sys.platform, 'lib')
 extension = {'darwin': '.dylib', 'win32': '.dll'}.get(sys.platform, '.so')
 dll_name = prefix + dll_name + extension
 
-libmpc = ctypes.cdll.LoadLibrary(dll_name)
+libmpc = ctypes.cdll.LoadLibrary("/opt/bitizen/" + dll_name)
 
 
 if len(sys.argv) != 4 and len(sys.argv) != 3:
@@ -87,7 +87,7 @@ class MultiPartySig:
 
 
     @staticmethod
-    def CmpKeygenInit(ctx_id:int, self_id: str, participants: list[str], threshold: int):
+    def CmpKeygenInit(ctx_id:int, self_id: str, participants, threshold: int):
         print("calling CmpKeygenInit")
         participants = json.dumps(participants)
 
@@ -108,7 +108,7 @@ class MultiPartySig:
 
 
     @staticmethod
-    def CmpSignInit(ctx_id:int, participants: list[str], keyshare_base64: str, msg_hash_base64: str):
+    def CmpSignInit(ctx_id:int, participants, keyshare_base64: str, msg_hash_base64: str):
         print("calling CmpSignInit")
         participants = json.dumps(participants)
 
@@ -117,7 +117,7 @@ class MultiPartySig:
                                    keyshare_base64.encode('ascii'),
                                    msg_hash_base64.encode('ascii')
                                    ))
-    
+
 
     @staticmethod
     def CmpSignResult(ctx_id: int, self_id: str, result_base64: ctypes.c_char_p):
@@ -126,7 +126,7 @@ class MultiPartySig:
                                      self_id.encode('ascii'),
                                      ctypes.byref(result_base64)
                                      ))
-    
+
 
     @staticmethod
     def CmpReshareInit(ctx_id:int, self_id: str, detailed_participants, threshold: int, keyshare_base64: str):
@@ -148,7 +148,7 @@ class MultiPartySig:
                                         self_id.encode('ascii'),
                                         ctypes.byref(result_base64)
                                         ))
-        
+
 
     @staticmethod
     def CmpDeriveBip32(keyshareBase64: str, index: int, result_base64: ctypes.c_char_p):
@@ -157,10 +157,10 @@ class MultiPartySig:
                                       index,
                                       ctypes.byref(result_base64)
                                       ))
-        
+
 
     @staticmethod
-    def FrostTaprootKeygenInit(ctx_id:int, self_id: str, participants: list[str], threshold: int):
+    def FrostTaprootKeygenInit(ctx_id:int, self_id: str, participants, threshold: int):
         print("calling FrostTaprootKeygenInit")
         participants = json.dumps(participants)
 
@@ -181,7 +181,7 @@ class MultiPartySig:
 
 
     @staticmethod
-    def FrostTaprootSignInit(ctx_id:int, participants: list[str], keyshare_base64: str, msg_hash_base64: str):
+    def FrostTaprootSignInit(ctx_id:int, participants, keyshare_base64: str, msg_hash_base64: str):
         print("calling FrostTaprootSignInit")
         participants = json.dumps(participants)
 
@@ -190,7 +190,7 @@ class MultiPartySig:
                                             keyshare_base64.encode('ascii'),
                                             msg_hash_base64.encode('ascii')
                                             ))
-        
+
     @staticmethod
     def FrostTaprootSignResult(ctx_id: int, self_id: str, result_base64: ctypes.c_char_p):
         print("calling FrostTaprootSignResult")
@@ -198,7 +198,7 @@ class MultiPartySig:
                                               self_id.encode('ascii'),
                                               ctypes.byref(result_base64)
                                               ))
-        
+
 
     @staticmethod
     def FrostTaprootReshareInit(ctx_id:int, self_id: str, detailed_participants, threshold: int, keyshare_base64: str):
@@ -232,7 +232,7 @@ class MultiPartySig:
 
 
 
-def handle_output(output: str, ctx_id: int, step: int, bulletin_board: dict[str, str]) -> tuple[bool, bool]:
+def handle_output(output: str, ctx_id: int, step: int, bulletin_board):
     msgs = json.loads(output)
 
     has_broadcast = False
@@ -258,7 +258,7 @@ def handle_output(output: str, ctx_id: int, step: int, bulletin_board: dict[str,
     return has_broadcast, has_p2p
 
 
-def get_next_input(ctx_id: int, self_id: str, participants: list[str], step: int, has_broadcast: bool, has_p2p: bool, bulletin_board: dict[str, str]) -> bytes:
+def get_next_input(ctx_id: int, self_id: str, participants, step: int, has_broadcast: bool, has_p2p: bool, bulletin_board) -> bytes:
     outputs = []
     if has_broadcast:
         for participant in participants:
@@ -281,7 +281,7 @@ def get_next_input(ctx_id: int, self_id: str, participants: list[str], step: int
     return json_bytes
 
 
-def poll_data(key: str, bulletin_board: dict[str, str]):
+def poll_data(key: str, bulletin_board):
     max_retry = 300
     for i in range(max_retry):
         if key in bulletin_board:
@@ -292,7 +292,7 @@ def poll_data(key: str, bulletin_board: dict[str, str]):
     raise ValueError("No data found for key " + key)
 
 
-def keygen(prot: Protocol, ctx_id: int, self_id: str, participants: list[str], threshold: int, bulletin_board: dict[str, str]) -> str:
+def keygen(prot: Protocol, ctx_id: int, self_id: str, participants, threshold: int, bulletin_board) -> str:
     # Init
     if prot == Protocol.CMP:
         MultiPartySig.CmpKeygenInit(ctx_id, self_id, participants, threshold)
@@ -320,7 +320,7 @@ def keygen(prot: Protocol, ctx_id: int, self_id: str, participants: list[str], t
             break
 
         has_broadcast, has_p2p = handle_output(output_str, ctx_id, step, bulletin_board)
-        
+
         step = step + 1
         next_input = get_next_input(ctx_id, self_id, participants, step, has_broadcast, has_p2p, bulletin_board)
         input_bytes = next_input
@@ -336,7 +336,7 @@ def keygen(prot: Protocol, ctx_id: int, self_id: str, participants: list[str], t
     return result_base64.value.decode('ascii')
 
 
-def sign(prot: Protocol, ctx_id: int, self_id: str, participants: list[str], keyshare_base64: str, msg_hash_base64: str, bulletin_board: dict[str, str]) -> str:
+def sign(prot: Protocol, ctx_id: int, self_id: str, participants, keyshare_base64: str, msg_hash_base64: str, bulletin_board) -> str:
     # Init
     if prot == Protocol.CMP:
         MultiPartySig.CmpSignInit(ctx_id, participants, keyshare_base64, msg_hash_base64)
@@ -364,7 +364,7 @@ def sign(prot: Protocol, ctx_id: int, self_id: str, participants: list[str], key
             break
 
         has_broadcast, has_p2p = handle_output(output_str, ctx_id, step, bulletin_board)
-        
+
         step = step + 1
         next_input = get_next_input(ctx_id, self_id, participants, step, has_broadcast, has_p2p, bulletin_board)
         input_bytes = next_input
@@ -380,7 +380,7 @@ def sign(prot: Protocol, ctx_id: int, self_id: str, participants: list[str], key
     return result_base64.value.decode('ascii')
 
 
-def reshare(prot: Protocol, ctx_id: int, self_id: str, detailed_participants, threshold: int, keyshare_base64: str, bulletin_board: dict[str, str]) -> str:
+def reshare(prot: Protocol, ctx_id: int, self_id: str, detailed_participants, threshold: int, keyshare_base64: str, bulletin_board) -> str:
     # Init
     if prot == Protocol.CMP:
         MultiPartySig.CmpReshareInit(ctx_id, self_id, detailed_participants, threshold, keyshare_base64)
@@ -410,7 +410,7 @@ def reshare(prot: Protocol, ctx_id: int, self_id: str, detailed_participants, th
             break
 
         has_broadcast, has_p2p = handle_output(output_str, ctx_id, step, bulletin_board)
-        
+
         step = step + 1
         next_input = get_next_input(ctx_id, self_id, participants, step, has_broadcast, has_p2p, bulletin_board)
         input_bytes = next_input
@@ -426,7 +426,7 @@ def reshare(prot: Protocol, ctx_id: int, self_id: str, detailed_participants, th
     return result_base64.value.decode('ascii')
 
 
-def init_websocket_client(bulletin_board: dict[str, str]):
+def init_websocket_client(bulletin_board):
     while True:
         res = ws_conn.recv()
         # print('websocket msg = {}'.format(res))
@@ -434,7 +434,7 @@ def init_websocket_client(bulletin_board: dict[str, str]):
         bulletin_board[ws_msg['key']] = ws_msg['value']
 
 
-def test_keygen(prot: Protocol, participant_id: str, participants: list[str], threshold: int, bulletin_board: dict[str, str]) -> str:
+def test_keygen(prot: Protocol, participant_id: str, participants, threshold: int, bulletin_board) -> str:
     ctx_id = 101234567890
 
     print("KEYGEN START")
@@ -445,7 +445,7 @@ def test_keygen(prot: Protocol, participant_id: str, participants: list[str], th
     return result
 
 
-def test_sign(prot: Protocol, participant_id: str, keyshare_for_sign: str, bulletin_board: dict[str, str]):
+def test_sign(prot: Protocol, participant_id: str, keyshare_for_sign: str, bulletin_board):
     msg_hash_base64 = "aGVsbG8gd29ybGQ="
     ctx_id = 201234567890
 
@@ -456,7 +456,7 @@ def test_sign(prot: Protocol, participant_id: str, keyshare_for_sign: str, bulle
     print("--- SIGN TIME %s seconds ---" % (time.time() - start_time))
 
 
-def test_reshare(prot: Protocol, participant_id: str, threshold: int, old_keyshare: str, bulletin_board: dict[str, str]) -> str:
+def test_reshare(prot: Protocol, participant_id: str, threshold: int, old_keyshare: str, bulletin_board) -> str:
     ctx_id = 301234567890
     detailed_participants = [{"PartyID":"a", "OldPartyID":"a"}, {"PartyID":"b", "OldPartyID":"b"}, {"PartyID":"c","OldPartyID":""}]
 
